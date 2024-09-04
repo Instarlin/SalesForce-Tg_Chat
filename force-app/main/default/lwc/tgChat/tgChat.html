@@ -1,0 +1,20 @@
+<template>
+    <div class="slds-box slds-theme_default main-wrapper">
+        <div class="messages-list">
+            <template if:true={messages}>
+                <template for:each={messages} for:item="message">
+                    <div key={message.id} class="message-item {message.type}">
+                        <p>{message.body}</p>
+                        <small>{message.timestamp}</small>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </br>
+        <h1>Your Message</h1>
+        <div class="chat-container">
+            <lightning-input onchange={handleInputChange} value={messageBody} class="input-field"></lightning-input>
+            <lightning-button label="Send" onclick={sendMessage} class="send-btn"></lightning-button>
+        </div>
+    </div>
+</template>
