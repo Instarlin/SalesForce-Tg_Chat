@@ -1,5 +1,24 @@
 <template>
     <div class="slds-box slds-theme_default main-wrapper">
+        <lightning-record-picker
+            label="Название компании:"
+            placeholder="Поиск компании..."
+            object-api-name="Account"
+            value={selectedCompanyName}
+            onchange={handleCompanySelect}
+            required="true"
+            message-when-bad-input="Пожалуйста заполните это поле!"
+        ></lightning-record-picker>
+        <lightning-record-picker
+            label="Номер тикета:"
+            placeholder="Поиск тикета..."
+            object-api-name="Ticket__c"
+            value={selectedTicket}
+            onchange={hadnleTicketSelect}
+            required="true"
+            message-when-bad-input="Пожалуйста заполните это поле!"
+            disabled={ticketPickerEnable}
+        ></lightning-record-picker>
         <div class="messages-list">
             <template if:true={messages}>
                 <template for:each={messages} for:item="message">

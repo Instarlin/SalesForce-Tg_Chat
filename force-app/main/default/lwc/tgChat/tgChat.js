@@ -6,6 +6,9 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 export default class MessageComponent extends LightningElement {
     @track messageBody = '';
     @track messages = [];
+    @track selectedCompanyName = '';
+    @track selectedTicket = '';
+    @track ticketPickerEnable = true;
     isRendered = false;
 
     connectedCallback() {
@@ -37,6 +40,20 @@ export default class MessageComponent extends LightningElement {
             });
     }
 
+    handleCompanySelect(event) {
+        this.selectedCompanyName = event.detail.recordId;
+        if(this.selectedCompanyName) this.ticketPickerEnable = false;
+        else this.ticketPickerEnable = true;
+    }
+
+    hadnleTicketSelect(event) {
+        console.log(event);
+        this.selectedTicket = event.detail.recordId;
+        if(this.selectedCompanyName && this.selectedTicket) {
+            this.loadMessages();
+        }
+    }
+
     handleInputChange(event) {
         this.messageBody = event.target.value;
     }
@@ -47,7 +64,7 @@ export default class MessageComponent extends LightningElement {
             return;
         }
 
-        createMessage({ messageBody: this.messageBody, senderType: 'outcoming' })
+        createMessage({ messageBody: this.messageBody, senderType: 'outcoming', owner: this })
             .then(result => {
                 this.showToast('Success', 'Message sent successfully!', 'success');
                 this.messages.push({
@@ -64,6 +81,7 @@ export default class MessageComponent extends LightningElement {
                 console.error('Error:', error);
             });
     }
+    
 
     scrollToBottom() {
         requestAnimationFrame(() => {
