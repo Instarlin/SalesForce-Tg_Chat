@@ -1,18 +1,24 @@
 import { LightningElement, track, wire } from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import createMessage from '@salesforce/apex/MessageController.createMessage';
 import getAllMessages from '@salesforce/apex/MessageController.getAllMessages';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getFilteredTickets from '@salesforce/apex/MessageController.getFilteredTickets';
+import getAllCompanies from '@salesforce/apex/MessageController.getAllCompanies';
+
 
 export default class MessageComponent extends LightningElement {
     @track messageBody = '';
     @track messages = [];
     @track selectedCompanyName = '';
+    @track companyOptions = [];
     @track selectedTicket = '';
-    @track ticketPickerEnable = true;
+    @track ticketOptions = [];
+    @track ticketPickerDisable = true;
+    @track sendBtnDisable = true;
     isRendered = false;
 
     connectedCallback() {
-        this.loadMessages();
+        this.fetchCompanies();
     }
 
     renderedCallback() {
@@ -23,7 +29,7 @@ export default class MessageComponent extends LightningElement {
     }
 
     loadMessages() {
-        getAllMessages()
+        getAllMessages({Id: this.selectedTicket})
             .then(result => {
                 this.messages = result.map(message => {
                     return {
@@ -33,24 +39,58 @@ export default class MessageComponent extends LightningElement {
                     };
                 });
                 this.isRendered = false;
-            })
-            .catch(error => {
+            }).catch(error => {
                 this.showToast('Error', 'Failed to load messages.', 'error');
                 console.error('Error loading messages:', error);
             });
     }
 
+    fetchCompanies() {
+        getAllCompanies().then(result => {
+            this.companyOptions = result.map(company => {
+                return {
+                    label: company.Name,
+                    value: company.Id
+                };
+            });
+        }).catch(error => {
+            console.error('Error fetching Companies: ', error);
+        })
+    }
+
     handleCompanySelect(event) {
-        this.selectedCompanyName = event.detail.recordId;
-        if(this.selectedCompanyName) this.ticketPickerEnable = false;
-        else this.ticketPickerEnable = true;
+        this.selectedCompanyName = event.detail.value;
+        console.log(this.selectedCompanyName);
+        if(this.selectedCompanyName) {
+            this.fetchTickets();
+            this.ticketPickerDisable = false;
+        } else this.ticketPickerDisable = true;
+    }
+
+    fetchTickets() {
+        if (this.selectedCompanyName) {
+            getFilteredTickets({ companyId: this.selectedCompanyName }).then(data => {
+                this.ticketOptions = data.map(ticket => {
+                    return { 
+                        label: ticket.Name,
+                        value: ticket.Id
+                    };
+                });
+            }).catch(error => {
+                console.error('Error fetching Tickets: ', error);
+            });
+        }
     }
 
     hadnleTicketSelect(event) {
-        console.log(event);
-        this.selectedTicket = event.detail.recordId;
+        this.selectedTicket = event.detail.value;
+        console.log(this.selectedTicket);
         if(this.selectedCompanyName && this.selectedTicket) {
             this.loadMessages();
+            this.sendBtnDisable = false;
+        } else {
+            this.messages = [];
+            this.sendBtnDisable = true;
         }
     }
 
@@ -64,24 +104,21 @@ export default class MessageComponent extends LightningElement {
             return;
         }
 
-        createMessage({ messageBody: this.messageBody, senderType: 'outcoming', owner: this })
-            .then(result => {
-                this.showToast('Success', 'Message sent successfully!', 'success');
-                this.messages.push({
-                    id: result,
-                    body: this.messageBody,
-                    timestamp: new Date().toLocaleString(),
-                    type: 'outcoming'
-                });
-                this.messageBody = '';
-                this.scrollToBottom();
-            })
-            .catch(error => {
-                this.showToast('Error', 'Failed to send the message.', 'error');
-                console.error('Error:', error);
+        createMessage({ messageBody: this.messageBody, senderType: 'outcoming', ticketId: this.selectedTicket }).then(result => {
+            this.showToast('Success', 'Message sent successfully!', 'success');
+            this.messages.push({
+                id: result,
+                body: this.messageBody,
+                timestamp: new Date().toLocaleString(),
+                type: 'outcoming'
             });
+            this.messageBody = '';
+            this.scrollToBottom();
+        }).catch(error => {
+            this.showToast('Error', 'Failed to send the message.', 'error');
+            console.error('Error:', error);
+        });
     }
-    
 
     scrollToBottom() {
         requestAnimationFrame(() => {

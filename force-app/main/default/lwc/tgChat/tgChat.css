@@ -26,6 +26,8 @@
 }
 
 .messages-list {
+  display: flex;
+  flex-direction: column;
   max-height: 300px;
   overflow-y: auto;
   margin-top: 20px;
@@ -44,7 +46,13 @@
   padding-bottom: 15px;
   position: relative;
   max-width: 70%;
+  min-width: 30%;
   word-wrap: break-word;
+  transition: .2s;
+}
+
+.message-item:hover {
+  cursor: pointer;
 }
 
 .message-item p {
@@ -62,11 +70,16 @@
   right: 10px;
 }
 
-.outgoing {
-  background-color: #0070d2;
+.outcoming {
+  background-color: #90CAF9;
   color: #fff;
   align-self: flex-end;
   border-top-right-radius: 0;
+}
+
+.outcoming:hover {
+  transition: .2s;
+  background-color: #b8ddfc;
 }
 
 .incoming {
