@@ -21,7 +21,7 @@ public with sharing class MessageController {
         String jsonData = JSON.serialize(data);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('http://185.195.26.101:8000');
+        req.setEndpoint('http://185.195.26.101:8000/message_recieve');
         req.setHeader('Content-Type', 'application/json');
         req.setBody(jsonData);
         req.setMethod('POST');
