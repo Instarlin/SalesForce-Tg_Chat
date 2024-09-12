@@ -28,7 +28,8 @@
 .messages-list {
   display: flex;
   flex-direction: column;
-  max-height: 300px;
+  max-height: 400px;
+  min-height: 400px;
   overflow-y: auto;
   margin-top: 20px;
   border: 1px solid #ddd;
@@ -37,41 +38,32 @@
   scroll-behavior: smooth;
 }
 
-.message-item {
-  margin-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  background-color: #f1f1f1;
-  border-radius: 8px;
-  padding: 10px;
-  padding-bottom: 15px;
-  position: relative;
-  max-width: 70%;
-  min-width: 30%;
-  word-wrap: break-word;
-  transition: .2s;
-}
-
-.message-item:hover {
-  cursor: pointer;
-}
-
-.message-item p {
+p {
   margin: 0;
   font-weight: normal;
   font-size: 14px;
-  color: #333;
 }
 
-.message-item small {
+/* small {
   color: #888;
   font-size: 12px;
   position: absolute;
   bottom: 5px;
   right: 10px;
-}
+} */
 
 .outcoming {
-  background-color: #90CAF9;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
+  padding-bottom: 18px;
+  position: relative;
+  max-width: 70%;
+  min-width: 20%;
+  word-wrap: break-word;
+  transition: .2s;
+  background-color: #0078D7 ;
   color: #fff;
   align-self: flex-end;
   border-top-right-radius: 0;
@@ -79,12 +71,29 @@
 
 .outcoming:hover {
   transition: .2s;
-  background-color: #b8ddfc;
+  background-color: #3398ff;
+  cursor: pointer;
 }
 
 .incoming {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px;
+  padding-bottom: 18px;
+  position: relative;
+  max-width: 70%;
+  min-width: 20%;
+  word-wrap: break-word;
+  transition: .2s;
   background-color: #e1e1e1;
   color: #333;
   align-self: flex-start;
   border-top-left-radius: 0;
+}
+
+.incoming:hover {
+  transition: .2s;
+  background-color: #cfcfcf;
+  cursor: pointer;
 }

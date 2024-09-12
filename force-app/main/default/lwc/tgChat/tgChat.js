@@ -1,4 +1,5 @@
-import { LightningElement, track, wire } from 'lwc';
+import { LightningElement, track } from 'lwc';
+import { subscribe, unsubscribe } from 'lightning/empApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import createMessage from '@salesforce/apex/MessageController.createMessage';
 import getAllMessages from '@salesforce/apex/MessageController.getAllMessages';
@@ -16,9 +17,34 @@ export default class MessageComponent extends LightningElement {
     @track ticketPickerDisable = true;
     @track sendBtnDisable = true;
     isRendered = false;
+    ticketId = '';
+    subscription = null;
 
     connectedCallback() {
         this.fetchCompanies();
+        const eventName = '/event/MessageCreated__e';
+        subscribe(eventName, -1, message => {
+            this.ticketId = message.data.payload.MessageTicketId__c;
+            if (this.selectedTicket == this.ticketId) {
+                this.loadMessages();
+            }
+            console.log('Received platform event. Ticket ID: ' + this.ticketId);
+        }).then(response => {
+            console.log('Subscribed to platform event:', response.channel);
+            this.subscription = response;
+        }).catch(error => {
+            console.error('Error subscribing to platform event:', error);
+        });
+    }
+
+    disconnectedCallback() {
+        if (this.subscription) {
+            unsubscribe(this.subscription, (response) => {
+                console.log('Unsubscribed from: ', response);
+            }).catch(error => {
+                console.error('Error unsubscribing:', error);
+            });
+        }
     }
 
     renderedCallback() {
@@ -29,13 +55,15 @@ export default class MessageComponent extends LightningElement {
     }
 
     loadMessages() {
-        getAllMessages({Id: this.selectedTicket})
+        getAllMessages({id: this.selectedTicket})
             .then(result => {
+                console.log(result)
                 this.messages = result.map(message => {
                     return {
                         id: message.Id,
                         body: message.Body__c,
-                        timestamp: new Date(message.CreatedDate).toLocaleString()
+                        timestamp: new Date(message.CreatedDate).toLocaleString(),
+                        type: message.Type__c
                     };
                 });
                 this.isRendered = false;
@@ -59,8 +87,8 @@ export default class MessageComponent extends LightningElement {
     }
 
     handleCompanySelect(event) {
+        this.messages = [];
         this.selectedCompanyName = event.detail.value;
-        console.log(this.selectedCompanyName);
         if(this.selectedCompanyName) {
             this.fetchTickets();
             this.ticketPickerDisable = false;
@@ -82,7 +110,7 @@ export default class MessageComponent extends LightningElement {
         }
     }
 
-    hadnleTicketSelect(event) {
+    handleTicketSelect(event) {
         this.selectedTicket = event.detail.value;
         console.log(this.selectedTicket);
         if(this.selectedCompanyName && this.selectedTicket) {
@@ -105,6 +133,7 @@ export default class MessageComponent extends LightningElement {
         }
 
         createMessage({ messageBody: this.messageBody, senderType: 'outcoming', ticketId: this.selectedTicket }).then(result => {
+            console.log(result)
             this.showToast('Success', 'Message sent successfully!', 'success');
             this.messages.push({
                 id: result,
@@ -118,6 +147,10 @@ export default class MessageComponent extends LightningElement {
             this.showToast('Error', 'Failed to send the message.', 'error');
             console.error('Error:', error);
         });
+    }
+
+    getMessageClass(message) {
+        return `message-item ${message.type}`;
     }
 
     scrollToBottom() {

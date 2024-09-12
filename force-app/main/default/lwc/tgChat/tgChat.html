@@ -13,7 +13,7 @@
             label="Номер тикета:"
             placeholder="Поиск тикета..."
             value={selectedTicket}
-            onchange={hadnleTicketSelect}
+            onchange={handleTicketSelect}
             required
             options={ticketOptions}
             message-when-value-missing="Пожалуйста заполните это поле!"
@@ -22,7 +22,7 @@
         <div class="messages-list">
             <template if:true={messages}>
                 <template for:each={messages} for:item="message">
-                    <div key={message.id} class='message-item incoming'>
+                    <div key={message.id} class={message.type}>
                         <p>{message.body}</p>
                         <small>{message.timestamp}</small>
                     </div>

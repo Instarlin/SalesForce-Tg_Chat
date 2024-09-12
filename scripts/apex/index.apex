@@ -24,12 +24,18 @@
 
 // insert companys;
 
-List<Message__c> companys = new List<Message__c>();
+// List<Message__c> companys = new List<Message__c>();
 
-for (Integer i = 0; i < 5; i++) {
-  Message__c newt = new Message__c(Name = 'New ticket ' + i, Company__c = id[0].Id, Type);
-  companys.add(newt);
-}
+// for (Integer i = 0; i < 1; i++) {
+//   Message__c newt = new Message__c(Body__c = 'But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born' + i, Ticket__c = 'a07WU000007OTJoYAO', Type__c = 'incoming');
+//   companys.add(newt);
+// }
 
-insert companys;
+// insert companys;
 
+// Query to get all Account records
+// List<Message__c> allAccounts = [SELECT Id, Body__c FROM Message__c];
+
+// for (Message__c acc : allAccounts) {
+//   System.debug('Message: ', acc.Body__c);
+// }
