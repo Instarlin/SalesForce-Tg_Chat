@@ -6,71 +6,59 @@ import getAllMessages from '@salesforce/apex/MessageController.getAllMessages';
 import getFilteredTickets from '@salesforce/apex/MessageController.getFilteredTickets';
 import getAllCompanies from '@salesforce/apex/MessageController.getAllCompanies';
 
+const MESSAGE_CREATED_EVENT = '/event/MessageCreated__e';
+
 export default class MessageComponent extends LightningElement {
     messageBody = '';
     messages = [];
-    selectedCompanyName = '';
+    notifications = [];
+    selectedCompanyId = '';
     companyOptions = [];
-    selectedTicket = '';
+    selectedTicketId = '';
     ticketOptions = [];
-    ticketPickerDisable = true;
-    sendBtnDisable = true;
-    isRendered = false;
-    ticketId = '';
+    isTicketPickerDisabled = true;
+    isSendBtnDisabled = true;
     subscription = null;
 
     async connectedCallback() {
+        this.subscribeToMessageEvents();
         await this.fetchCompanies();
-        const eventName = '/event/MessageCreated__e';
-
-        try {
-            const response = await subscribe(eventName, -1, (message) => {
-                this.ticketId = message.data.payload.MessageTicketId__c;
-                if (this.selectedTicket === this.ticketId) {
-                    this.loadMessages();
-                }
-                console.log('Received platform event. Ticket ID: ' + this.ticketId);
-            });
-            console.log('Subscribed to platform event:', response.channel);
-            this.subscription = response;
-        } catch (error) {
-            console.error('Error subscribing to platform event:', error);
-        }
     }
 
     async disconnectedCallback() {
         if (this.subscription) {
             try {
                 const response = await unsubscribe(this.subscription);
-                console.log('Unsubscribed from: ', response);
+                console.log('Unsubscribed from:', response);
             } catch (error) {
                 console.error('Error unsubscribing:', error);
             }
         }
     }
 
-    renderedCallback() {
-        if (!this.isRendered) {
-            this.scrollToBottom();
-            this.isRendered = true;
-        }
-    }
-
-    async loadMessages() {
-        try {
-            const result = await getAllMessages({ id: this.selectedTicket });
-            console.log(result);
-            this.messages = result.map((message) => ({
-                id: message.Id,
-                body: message.Body__c,
-                timestamp: new Date(message.CreatedDate).toLocaleString(),
-                type: message.Type__c,
-            }));
-            this.isRendered = false;
-        } catch (error) {
-            this.showToast('Error', 'Failed to load messages.', 'error');
-            console.error('Error loading messages:', error);
-        }
+    subscribeToMessageEvents() {
+        subscribe(MESSAGE_CREATED_EVENT, -1, (message) => {
+            const receivedTicketId = message.data.payload.MessageTicketId__c;
+            if (this.selectedTicketId === receivedTicketId) {
+                this.loadMessages();
+            } else {
+                this.notifications.push({
+                    id: message.data.payload.MessageTicketId__c,
+                    value: message.data.payload.MessageName__c,
+                    timestamp: new Date(message.data.payload.CreatedDate).toLocaleString(),
+                });
+                console.log(this.notifications);
+                this.showToast('Новое сообщение', `У вас новое сообщение в чате: ${message.data.payload.MessageName__c}`, 'info');
+            };
+            // console.log('Received platform event. Ticket ID:', receivedTicketId);
+        })
+            .then((response) => {
+                console.log('Subscribed to platform event:', response.channel);
+                this.subscription = response;
+            })
+            .catch((error) => {
+                console.error('Error subscribing to platform event:', error);
+            });
     }
 
     async fetchCompanies() {
@@ -81,49 +69,76 @@ export default class MessageComponent extends LightningElement {
                 value: company.Id,
             }));
         } catch (error) {
-            console.error('Error fetching Companies: ', error);
+            console.error('Error fetching companies:', error);
+            this.showToast('Error', 'Failed to fetch companies.', 'error');
         }
     }
 
     handleCompanySelect(event) {
         this.messages = [];
-        this.selectedCompanyName = event.detail.value;
-        if (this.selectedCompanyName) {
-            this.fetchTickets();
-            this.ticketPickerDisable = false;
+        this.selectedCompanyId = event.detail.value;
+        if (this.selectedCompanyId) {
+            this.fetchTicketsForCompany();
+            this.isTicketPickerDisabled = false;
+            this.isSendBtnDisabled = true;
+            this.selectedTicketId = '';
         } else {
-            this.ticketPickerDisable = true;
+            this.isTicketPickerDisabled = true;
+            this.ticketOptions = [];
         }
     }
 
-    async fetchTickets() {
-        if (this.selectedCompanyName) {
-            try {
-                const data = await getFilteredTickets({ companyId: this.selectedCompanyName });
-                this.ticketOptions = data.map((ticket) => ({
-                    label: ticket.Name,
-                    value: ticket.Id,
-                }));
-            } catch (error) {
-                console.error('Error fetching Tickets: ', error);
-            }
+    async fetchTicketsForCompany() {
+        try {
+            const data = await getFilteredTickets({ companyId: this.selectedCompanyId });
+            this.ticketOptions = data.map((ticket) => ({
+                label: ticket.Name,
+                value: ticket.Id,
+            }));
+            console.log(data);
+        } catch (error) {
+            console.error('Error fetching tickets:', error);
+            this.showToast('Error', 'Failed to fetch tickets.', 'error');
         }
     }
 
     handleTicketSelect(event) {
-        this.selectedTicket = event.detail.value;
-        console.log(this.selectedTicket);
-        if (this.selectedCompanyName && this.selectedTicket) {
+        this.selectedTicketId = event.target.dataset.ticketId;
+        console.log(this.selectedTicketId);
+        if (this.selectedCompanyId && this.selectedTicketId) {
             this.loadMessages();
-            this.sendBtnDisable = false;
+            this.isSendBtnDisabled = false;
         } else {
             this.messages = [];
-            this.sendBtnDisable = true;
+            this.isSendBtnDisabled = true;
+        }
+    }
+
+    async loadMessages() {
+        try {
+            const result = await getAllMessages({ id: this.selectedTicketId });
+            this.messages = result.map((message) => ({
+                id: message.Id,
+                body: message.Body__c,
+                timestamp: new Date(message.CreatedDate).toLocaleString(),
+                type: message.Type__c,
+            }));
+            this.scrollToBottom();
+        } catch (error) {
+            this.showToast('Error', 'Failed to load messages.', 'error');
+            console.error('Error loading messages:', error);
         }
     }
 
     handleInputChange(event) {
         this.messageBody = event.target.value;
+    }
+
+    handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            this.sendMessage();
+        }
     }
 
     async sendMessage() {
@@ -136,10 +151,9 @@ export default class MessageComponent extends LightningElement {
             const result = await createMessage({
                 messageBody: this.messageBody,
                 senderType: 'outcoming',
-                ticketId: this.selectedTicket,
+                ticketId: this.selectedTicketId,
             });
 
-            console.log(result);
             this.showToast('Success', 'Message sent successfully!', 'success');
             this.messages.push({
                 id: result,
@@ -151,12 +165,8 @@ export default class MessageComponent extends LightningElement {
             this.scrollToBottom();
         } catch (error) {
             this.showToast('Error', 'Failed to send the message.', 'error');
-            console.error('Error:', error);
+            console.error('Error sending message:', error);
         }
-    }
-
-    getMessageClass(message) {
-        return `message-item ${message.type}`;
     }
 
     scrollToBottom() {
@@ -169,11 +179,12 @@ export default class MessageComponent extends LightningElement {
     }
 
     showToast(title, message, variant) {
-        const evt = new ShowToastEvent({
-            title: title,
-            message: message,
-            variant: variant,
-        });
-        this.dispatchEvent(evt);
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title,
+                message,
+                variant,
+            })
+        );
     }
 }

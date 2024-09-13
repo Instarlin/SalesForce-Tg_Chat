@@ -1,7 +1,7 @@
 // Ticket__c obj = new Ticket__c();
 
-// List<Message__c> recordsToDelete = [SELECT Id FROM Message__c LIMIT 10000]; // Adjust the object name
-// delete recordsToDelete;
+List<Company__c> recordsToDelete = [SELECT Id FROM Company__c LIMIT 10000]; // Adjust the object name
+delete recordsToDelete;
 
 
 // List<Company__c> companys = new List<Company__c>();
