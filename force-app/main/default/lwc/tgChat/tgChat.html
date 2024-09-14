@@ -28,16 +28,22 @@
                     <div
                         key={ticket.value}
                         data-ticket-id={ticket.value}
+                        data-ticket-name={ticket.label}
                         onclick={handleTicketSelect}
                         class="ticketOptions"
                     >
                         {ticket.label}
+                        <span 
+                            data-ticket-id={ticket.value}
+                            data-ticket-name={ticket.label}
+                            class={ticket.message}
+                        ></span>
                     </div>
                 </template>
             </div>
         </div>
         <div class="slds-box slds-theme_default chatAreaWrapper">
-
+            <h1>Тема: <b>{selectedTicketName}</b>   |   ID: <b>{selectedTicketId}</b></h1>
             <!-- Messages List -->
             <div class="messages-list">
                 <template if:true={messages}>

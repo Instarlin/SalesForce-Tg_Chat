@@ -26,6 +26,7 @@
 }
 
 .ticketOptions {
+  position: relative;
   width: 100%;
   text-align: left;
   padding: 16px 0px 16px 15px;
@@ -36,6 +37,20 @@
 .ticketOptions:hover {
   cursor: pointer;
   background-color: #d0d0d0;
+}
+
+.hide {
+  display: none;
+}
+
+.notificationIndicator {
+  position: absolute;
+  top: calc(50% - 5px);
+  right: 8px;
+  background-color: #3398ff;
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
 }
 
 .chatAreaWrapper {

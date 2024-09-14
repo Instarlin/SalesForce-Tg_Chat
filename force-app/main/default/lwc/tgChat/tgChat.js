@@ -11,10 +11,10 @@ const MESSAGE_CREATED_EVENT = '/event/MessageCreated__e';
 export default class MessageComponent extends LightningElement {
     messageBody = '';
     messages = [];
-    notifications = [];
     selectedCompanyId = '';
     companyOptions = [];
     selectedTicketId = '';
+    selectedTicketName = '';
     ticketOptions = [];
     isTicketPickerDisabled = true;
     isSendBtnDisabled = true;
@@ -42,12 +42,9 @@ export default class MessageComponent extends LightningElement {
             if (this.selectedTicketId === receivedTicketId) {
                 this.loadMessages();
             } else {
-                this.notifications.push({
-                    id: message.data.payload.MessageTicketId__c,
-                    value: message.data.payload.MessageName__c,
-                    timestamp: new Date(message.data.payload.CreatedDate).toLocaleString(),
-                });
-                console.log(this.notifications);
+                this.ticketOptions = this.ticketOptions.map(
+                    ticket => ticket.value === message.data.payload.MessageTicketId__c?{...ticket, message: 'notificationIndicator'}:ticket
+                );
                 this.showToast('Новое сообщение', `У вас новое сообщение в чате: ${message.data.payload.MessageName__c}`, 'info');
             };
             // console.log('Received platform event. Ticket ID:', receivedTicketId);
@@ -65,8 +62,8 @@ export default class MessageComponent extends LightningElement {
         try {
             const result = await getAllCompanies();
             this.companyOptions = result.map((company) => ({
-                label: company.Name,
                 value: company.Id,
+                label: company.Name,
             }));
         } catch (error) {
             console.error('Error fetching companies:', error);
@@ -92,10 +89,10 @@ export default class MessageComponent extends LightningElement {
         try {
             const data = await getFilteredTickets({ companyId: this.selectedCompanyId });
             this.ticketOptions = data.map((ticket) => ({
-                label: ticket.Name,
                 value: ticket.Id,
+                label: ticket.Name,
+                message: 'notificationIndicator hide',
             }));
-            console.log(data);
         } catch (error) {
             console.error('Error fetching tickets:', error);
             this.showToast('Error', 'Failed to fetch tickets.', 'error');
@@ -104,14 +101,18 @@ export default class MessageComponent extends LightningElement {
 
     handleTicketSelect(event) {
         this.selectedTicketId = event.target.dataset.ticketId;
-        console.log(this.selectedTicketId);
+        this.selectedTicketName = event.target.dataset.ticketName;
         if (this.selectedCompanyId && this.selectedTicketId) {
             this.loadMessages();
             this.isSendBtnDisabled = false;
         } else {
             this.messages = [];
             this.isSendBtnDisabled = true;
-        }
+        };
+        const ticketToUpdate = this.ticketOptions.find(ticket => ticket.message === 'notificationIndicator' && ticket.value === this.selectedTicketId);
+        if (ticketToUpdate) {
+            ticketToUpdate.message = 'notificationIndicator hide';
+        };
     }
 
     async loadMessages() {
@@ -153,7 +154,6 @@ export default class MessageComponent extends LightningElement {
                 senderType: 'outcoming',
                 ticketId: this.selectedTicketId,
             });
-
             this.showToast('Success', 'Message sent successfully!', 'success');
             this.messages.push({
                 id: result,
